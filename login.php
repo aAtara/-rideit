@@ -1,69 +1,51 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+include 'db.php';
+session_start();
 
-header('Content-Type: application/json');
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['email']);
+    $password = trim($_POST['password']);
 
-// Configuración de la base de datos
-$servername = "localhost";
-$username = "root";
-$password_db = "escuadron99"; 
-$dbname = "registroub"; 
+    // Validar campos vacíos
+    if (empty($email) || empty($password)) {
+        header("Location: login.html?error=empty_fields");
+        exit;
+    }
 
-// Crear la conexión
-$conn = new mysqli($servername, $username, $password_db, $dbname);
-
-// Verificar conexión
-if ($conn->connect_error) {
-    echo json_encode(['success' => false, 'message' => 'Error de conexión a la base de datos']);
-    exit();
-}
-
-// Leer datos del POST
-$data = json_decode(file_get_contents('php://input'), true);
-if (!isset($data['email']) || !isset($data['password'])) {
-    echo json_encode(['success' => false, 'message' => 'Datos incompletos']);
-    exit();
-}
-
-$emailOrPhone = $data['email'];
-$password = $data['password'];
-
-// Verificar si es correo electrónico o número de teléfono
-if (filter_var($emailOrPhone, FILTER_VALIDATE_EMAIL)) {
-    $query = "SELECT * FROM usuarios WHERE email = ?";
-} else {
-    $query = "SELECT * FROM usuarios WHERE phone = ?";
-}
-
-// Preparar la consulta SQL y verificar si tuvo éxito
-if ($stmt = $conn->prepare($query)) {
-    $stmt->bind_param("s", $emailOrPhone);
+    // Consultar la base de datos
+    $stmt = $conn->prepare("SELECT id, name, password FROM users WHERE email = ?");
+    if (!$stmt) {
+        die("Error en la preparación de la consulta: " . $conn->error);
+    }
+    $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
         $user = $result->fetch_assoc();
 
-        // Verificar la contraseña
+        // Validar la contraseña utilizando password_verify
         if (password_verify($password, $user['password'])) {
-            // Usar 'first_name' en lugar de 'name'
-            $userName = isset($user['first_name']) ? $user['first_name'] : 'Usuario';
-            echo json_encode(['success' => true, 'message' => 'Inicio de sesión exitoso', 'name' => $userName]);
+            // Establecer las variables de sesión
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['user_name'] = $user['name'];
+
+            // Redirigir al dashboard
+            header("Location: dashboard.php");
+            exit;
         } else {
-            echo json_encode(['success' => false, 'message' => 'Contraseña incorrecta']);
+            // Contraseña incorrecta
+            header("Location: login.html?error=invalid_password");
+            exit;
         }
     } else {
-        echo json_encode(['success' => false, 'message' => 'Usuario no encontrado']);
+        // Usuario no encontrado
+        header("Location: login.html?error=user_not_found");
+        exit;
     }
-
-    // Cerrar la consulta
-    $stmt->close();
 } else {
-    echo json_encode(['success' => false, 'message' => 'Error en la consulta: ' . $conn->error]);
+    // Si no se envió un formulario POST
+    header("Location: login.html");
+    exit;
 }
-
-// Cerrar la conexión
-$conn->close();
 ?>

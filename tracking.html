@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seguimiento del Viaje - TuApp Conductores</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css">
+    <script src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY&libraries=places"></script>
+</head>
+<body class="bg-gray-50 font-sans">
+
+    <!-- Encabezado -->
+    <header class="bg-gradient-to-r from-blue-600 to-green-600 text-white px-4 py-3 flex justify-between items-center shadow-md">
+        <h1 class="text-lg font-bold truncate">🚖 Seguimiento del Viaje</h1>
+        <a href="dashboard.html" class="bg-white text-blue-600 px-3 py-1 rounded-md text-sm font-semibold hover:shadow">
+            Volver
+        </a>
+    </header>
+
+    <!-- Contenido principal -->
+    <main class="px-4 py-4 space-y-4">
+
+        <!-- Información del viaje -->
+        <section class="bg-white p-4 rounded-lg shadow-md">
+            <h2 class="text-md font-bold text-gray-800">Pasajero: Ana López</h2>
+            <div class="text-gray-600 text-sm mt-2 space-y-1">
+                <p><strong>Recoger en:</strong> Av. Juárez #789</p>
+                <p><strong>Destino:</strong> Av. Hidalgo #321</p>
+                <p><strong>Tiempo Estimado:</strong> 10 minutos</p>
+            </div>
+        </section>
+
+        <!-- Mapa -->
+        <section>
+            <div id="map-container" class="w-full h-64 bg-gray-200 rounded-lg shadow-md"></div>
+        </section>
+
+        <!-- Botón de acción -->
+        <section>
+            <button class="bg-blue-600 text-white py-3 rounded-lg w-full font-semibold text-sm shadow-md hover:bg-blue-700 transition">
+                Llegué
+            </button>
+        </section>
+
+    </main>
+
+    <script>
+        // Inicializar mapa de Google Maps
+        function initMap() {
+            const map = new google.maps.Map(document.getElementById("map-container"), {
+                center: { lat: 19.432608, lng: -99.133209 }, // Coordenadas iniciales (CDMX)
+                zoom: 14,
+                disableDefaultUI: true, // Desactivar controles predeterminados para mayor espacio en móviles
+            });
+
+            // Agregar marcador de ubicación de recogida
+            new google.maps.Marker({
+                position: { lat: 19.432608, lng: -99.133209 },
+                map,
+                title: "Ubicación de recogida",
+            });
+        }
+
+        window.onload = initMap;
+    </script>
+</body>
+</html>

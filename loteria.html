@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Lotería de Sílabas Interactiva</title>
+    <style>
+        body { 
+            font-family: Comic Sans MS, Arial, sans-serif;
+            background: linear-gradient(135deg, #f7cac9 0%, #92a8d1 100%);
+            margin: 0; min-height: 100vh;
+        }
+        h1 {
+            text-align: center;
+            color: #ff6f61;
+            font-size: 2.5em;
+            margin-top: 18px;
+            text-shadow: 2px 2px 4px #fff;
+        }
+        #instrucciones {
+            text-align: center;
+            font-size: 1.2em;
+            background: #fffde7;
+            margin: 18px 30px 0 30px;
+            padding: 8px 12px;
+            border-radius: 9px;
+            border: 2px dashed #ffd700;
+            color: #ff6f61;
+        }
+        #tabla {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 14px;
+            margin: 30px 0;
+            max-width: 370px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .carta {
+            width: 80px;
+            height: 80px;
+            background: #fff8e1;
+            border: 3px solid #ffb347;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5em;
+            color: #6c3483;
+            box-shadow: 2px 2px 8px #d1c4e9;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.15s, background 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+        .carta.marcada {
+            background: #81c784;
+            color: #fff;
+            animation: pop 0.3s;
+            box-shadow: 0 0 16px #388e3c;
+        }
+        .carta.error {
+            background: #e57373;
+            color: #fff;
+            animation: shake 0.25s;
+        }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            60% { transform: scale(1.18); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shake {
+            0% { transform: translateX(0);}
+            25% { transform: translateX(-10px);}
+            50% { transform: translateX(10px);}
+            75% { transform: translateX(-10px);}
+            100% { transform: translateX(0);}
+        }
+        #btnNueva, #btnLlamar {
+            display: inline-block; 
+            margin: 16px 8px; 
+            background: linear-gradient(90deg, #ffb347, #ff6f61); 
+            color: #fff; 
+            border: none; 
+            padding: 14px 32px; 
+            border-radius: 10px; 
+            font-size: 1.1em; 
+            cursor: pointer; 
+            font-weight: bold;
+            box-shadow: 2px 2px 8px #e57373;
+            transition: background 0.2s;
+        }
+        #btnNueva:hover, #btnLlamar:hover {
+            background: linear-gradient(90deg,#ff6f61, #ffb347);
+        }
+        #panel-juego {
+            text-align: center;
+        }
+        #carta-actual {
+            margin: 0 auto 18px auto;
+            background: #fffde7;
+            border: 4px solid #ffd700;
+            border-radius: 16px;
+            width: 110px;
+            height: 110px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            color: #ff6f61;
+            box-shadow: 0 0 24px #ffd70080;
+        }
+        #felicidades {
+            display: none;
+            font-size: 2.2em;
+            color: #388e3c;
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
+            animation: felicidades-pop 1s infinite alternate;
+        }
+        @keyframes felicidades-pop {
+            0% { transform: scale(1); color: #388e3c;}
+            100% { transform: scale(1.07); color: #ffb347;}
+        }
+        #cartas-restantes {
+            text-align: center;
+            color: #6c3483;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎲 Lotería de Sílabas 🎲</h1>
+    <div id="instrucciones">
+        Haz clic en <b>¡Siguiente carta!</b> para escuchar y ver la sílaba.<br>
+        ¡Busca la sílaba y márcala en tu tabla!
+    </div>
+    <div style="text-align:center;">
+        <button id="btnNueva">Nueva Tabla</button>
+        <button id="btnLlamar">¡Siguiente carta!</button>
+    </div>
+    <div id="panel-juego">
+        <div id="carta-actual">?</div>
+        <div id="cartas-restantes"></div>
+    </div>
+    <div id="tabla"></div>
+    <div id="felicidades">🎉 ¡LOTERÍA! 🎉<br>¡Eres un campeón!</div>
+
+    <script>
+        // Sílabas disponibles
+        const silabas = [
+            "ma", "me", "mi", "mo", "mu",
+            "pa", "pe", "pi", "po", "pu",
+            "sa", "se", "si", "so", "su",
+            "la", "le", "li", "lo", "lu",
+            "ta", "te", "ti", "to", "tu",
+            "ca", "ce", "ci", "co", "cu",
+            "ra", "re", "ri", "ro", "ru",
+            "ba", "be", "bi", "bo", "bu",
+            "fa", "fe", "fi", "fo", "fu"
+        ];
+
+        let tablaActual = [];
+        let cartasPorLlamar = [];
+        let cartaActual = null;
+        let marcadas = 0;
+        const TOTAL_CARTAS = 16;
+
+        function hablaSilaba(texto) {
+            if ('speechSynthesis' in window) {
+                const utter = new SpeechSynthesisUtterance(texto);
+                utter.lang = 'es-ES';
+                utter.rate = 0.7;
+                window.speechSynthesis.speak(utter);
+            }
+        }
+
+        function mezclar(array) {
+            return array.slice().sort(() => Math.random() - 0.5);
+        }
+
+        function generarTabla() {
+            document.getElementById("felicidades").style.display = "none";
+            marcadas = 0;
+            cartaActual = null;
+            // Selecciona 16 sílabas aleatorias para la tabla
+            tablaActual = mezclar(silabas).slice(0, TOTAL_CARTAS);
+            // Mezcla todas las sílabas para la "tómbola" (solo las de la tabla)
+            cartasPorLlamar = mezclar(tablaActual);
+            // Vacía panel de la carta y muestra "?"
+            document.getElementById("carta-actual").textContent = "?";
+            document.getElementById("cartas-restantes").textContent = `Cartas restantes: ${cartasPorLlamar.length}`;
+            // Renderiza la tabla
+            const tablaDiv = document.getElementById("tabla");
+            tablaDiv.innerHTML = "";
+            tablaActual.forEach((silaba, idx) => {
+                let carta = document.createElement("div");
+                carta.className = "carta";
+                carta.textContent = silaba;
+                carta.onclick = () => marcarCarta(carta, silaba);
+                tablaDiv.appendChild(carta);
+            });
+        }
+
+        function marcarCarta(carta, silaba) {
+            if (carta.classList.contains("marcada")) return;
+            if (cartaActual && silaba === cartaActual) {
+                carta.classList.add("marcada");
+                marcadas++;
+                if (marcadas === TOTAL_CARTAS) mostrarFelicidades();
+            } else {
+                carta.classList.add("error");
+                setTimeout(() => carta.classList.remove("error"), 400);
+            }
+        }
+
+        function siguienteCarta() {
+            if (cartasPorLlamar.length === 0) return;
+            cartaActual = cartasPorLlamar.shift();
+            document.getElementById("carta-actual").textContent = cartaActual;
+            hablaSilaba(cartaActual);
+            document.getElementById("cartas-restantes").textContent = `Cartas restantes: ${cartasPorLlamar.length}`;
+        }
+
+        function mostrarFelicidades() {
+            document.getElementById("felicidades").style.display = "block";
+            hablaSilaba("¡Lotería! ¡Eres un campeón!");
+            lanzarConfeti();
+        }
+
+        // Confeti visual
+        function lanzarConfeti() {
+            for (let i = 0; i < 30; i++) {
+                let confeti = document.createElement("div");
+                confeti.style.position = "fixed";
+                confeti.style.left = (Math.random() * 100) + "vw";
+                confeti.style.top = "-40px";
+                confeti.style.width = "18px";
+                confeti.style.height = "18px";
+                confeti.style.background = `hsl(${Math.random()*360},85%,70%)`;
+                confeti.style.borderRadius = Math.random()>0.5 ? "50%" : "3px";
+                confeti.style.opacity = "0.9";
+                confeti.style.zIndex = 1000;
+                confeti.style.transition = "top 2.5s cubic-bezier(.52,.01,.51,1)";
+                document.body.appendChild(confeti);
+                setTimeout(() => {
+                    confeti.style.top = "100vh";
+                }, 50);
+                setTimeout(() => {
+                    confeti.remove();
+                }, 2700);
+            }
+        }
+
+        document.getElementById("btnNueva").onclick = generarTabla;
+        document.getElementById("btnLlamar").onclick = siguienteCarta;
+
+        generarTabla();
+    </script>
+</body>
+</html>

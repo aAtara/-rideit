@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Mi RideIt</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css" />
+  <meta name="theme-color" content="#01579B" />
+  <meta name="description" content="Panel RideIt: pide viajes, favores y compras fácil y seguro." />
+  <link rel="icon" href="favicon.ico" />
+  <style>
+    .bounce { animation: bounce 1s infinite; }
+    @keyframes bounce { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-6px);} }
+    html { scroll-behavior: smooth; }
+    #sideMenu { box-shadow: -6px 0 24px rgba(0,0,0,0.4);}
+  </style>
+</head>
+<body class="bg-black text-white font-sans relative min-h-screen">
+
+  <!-- Botón menú hamburguesa móvil -->
+  <button id="menuBtn" class="sm:hidden fixed top-4 right-4 z-50 bg-blue-600 text-white p-2 rounded-lg shadow hover:bg-blue-700 transition" aria-label="Abrir menú">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+    </svg>
+  </button>
+  <nav id="sideMenu" class="fixed top-0 right-0 w-2/3 max-w-xs h-full bg-gray-900 flex flex-col p-8 space-y-6 text-lg font-bold text-white transform translate-x-full transition-all z-40">
+    <a href="#acciones" class="hover:text-blue-400">Inicio</a>
+    <a href="#historial" class="hover:text-blue-400">Historial</a>
+    <a href="#soporte" class="hover:text-blue-400">Soporte</a>
+    <a href="logout.html" class="hover:text-blue-400">Cerrar sesión</a>
+  </nav>
+  <script>
+    // Menú hamburguesa JS
+    const menuBtn = document.getElementById('menuBtn');
+    const sideMenu = document.getElementById('sideMenu');
+    menuBtn.onclick = (e) => {
+      e.stopPropagation();
+      sideMenu.style.transform = sideMenu.style.transform === 'translateX(0%)' ? 'translateX(100%)' : 'translateX(0%)';
+    };
+    document.body.addEventListener('click', e => {
+      if (e.target !== menuBtn && !sideMenu.contains(e.target)) {
+        sideMenu.style.transform = 'translateX(100%)';
+      }
+    });
+  </script>
+
+  <!-- Encabezado fijo -->
+  <header class="bg-gradient-to-r from-gray-800 via-gray-900 to-black text-white p-4 flex justify-between items-center shadow-lg sticky top-0 z-30">
+    <div class="text-2xl font-extrabold tracking-tight flex items-center gap-2">
+      <span class="bg-blue-500 rounded-full w-8 h-8 flex items-center justify-center text-xl font-bold shadow-md">R</span>
+      Mi RideIt
+    </div>
+    <div class="hidden sm:flex items-center gap-6">
+      <a href="#acciones" class="hover:text-blue-400 font-bold transition">Inicio</a>
+      <a href="#historial" class="hover:text-blue-400 font-bold transition">Historial</a>
+      <a href="#soporte" class="hover:text-blue-400 font-bold transition">Soporte</a>
+      <a href="logout.html" class="hover:text-blue-400 font-bold transition">Cerrar sesión</a>
+    </div>
+  </header>
+
+  <!-- Panel principal de usuario -->
+  <main class="max-w-3xl mx-auto w-full px-4 py-8" id="acciones">
+    <h1 class="text-3xl font-bold mb-2">¡Hola, [Nombre]!</h1>
+    <p class="mb-6 text-gray-400">¿Qué quieres hacer hoy?</p>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+      <a href="viaje.html" class="bg-blue-600 hover:bg-blue-700 transition-all rounded-xl p-6 flex flex-col items-center shadow-lg bounce">
+        <img src="https://cdn-icons-png.flaticon.com/512/854/854894.png" class="h-14 mb-4" alt="Solicitar viaje" />
+        <span class="font-bold text-lg">Solicitar viaje</span>
+      </a>
+      <a href="favor.html" class="bg-blue-500 hover:bg-blue-600 transition-all rounded-xl p-6 flex flex-col items-center shadow-lg">
+        <img src="https://cdn-icons-png.flaticon.com/512/190/190411.png" class="h-14 mb-4" alt="Pedir favor" />
+        <span class="font-bold text-lg">Pedir favor</span>
+      </a>
+      <a href="compra.html" class="bg-blue-800 hover:bg-blue-900 transition-all rounded-xl p-6 flex flex-col items-center shadow-lg">
+        <img src="https://cdn-icons-png.flaticon.com/512/1046/1046784.png" class="h-14 mb-4" alt="Hacer compra" />
+        <span class="font-bold text-lg">Hacer compra</span>
+      </a>
+    </div>
+    <!-- Sección historial de viajes/favores/compras -->
+    <section id="historial" class="mb-10">
+      <h2 class="text-xl font-bold mb-4 text-blue-400">Mi historial reciente</h2>
+      <div class="bg-gray-800 rounded-xl p-6 shadow-lg mb-3">
+        <p class="text-gray-300">🚗 Viaje a Plaza Central - <span class="text-gray-400">25 mayo 2025</span></p>
+        <p class="text-sm text-gray-500">Estado: Finalizado</p>
+      </div>
+      <div class="bg-gray-800 rounded-xl p-6 shadow-lg mb-3">
+        <p class="text-gray-300">🤝 Favor: Entrega de paquete - <span class="text-gray-400">23 mayo 2025</span></p>
+        <p class="text-sm text-gray-500">Estado: En camino</p>
+      </div>
+      <div class="bg-gray-800 rounded-xl p-6 shadow-lg">
+        <p class="text-gray-300">🛒 Compra: Supermercado - <span class="text-gray-400">21 mayo 2025</span></p>
+        <p class="text-sm text-gray-500">Estado: Entregado</p>
+      </div>
+      <p class="text-sm text-right mt-2"><a href="historial_completo.html" class="text-blue-400 hover:underline">Ver todo el historial</a></p>
+    </section>
+
+    <!-- Soporte y ayuda -->
+    <section id="soporte" class="mb-10">
+      <h2 class="text-xl font-bold mb-4 text-blue-400">¿Necesitas ayuda?</h2>
+      <p class="mb-4 text-gray-400">Chatea con soporte o revisa las <a href="ayuda.html" class="text-blue-400 hover:underline">preguntas frecuentes</a>.</p>
+      <a href="https://wa.me/526391691914" target="_blank" class="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 transition text-white font-bold px-6 py-3 rounded-full shadow-lg">
+        <svg class="w-6 h-6" fill="white" viewBox="0 0 24 24"><path d="M20.52 3.48A12.07 12.07 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.17 1.6 6.03L0 24l6.16-1.59A12.07 12.07 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.21-1.25-6.23-3.48-8.52zM12 22c-1.88 0-3.76-.5-5.41-1.45l-.39-.23-3.65.95.98-3.58-.25-.37A9.99 9.99 0 1 1 12 22zm5.13-7.38-.9-.45c-.22-.12-1.3-.64-1.5-.7-.2-.07-.35-.1-.5.1-.15.2-.58.7-.71.85-.13.15-.25.17-.47.06-.22-.12-.92-.34-1.76-1.09-.65-.57-1.09-1.27-1.22-1.49-.13-.22-.01-.33.1-.44.1-.1.22-.25.33-.38.11-.13.15-.22.22-.36.07-.13.03-.25-.01-.37-.04-.12-.5-1.2-.69-1.65-.18-.44-.37-.38-.5-.39h-.43c-.14 0-.36.05-.56.24s-.74.72-.74 1.76.76 2.05.87 2.19c.11.14 1.5 2.29 3.64 3.13.51.22.91.35 1.22.45.51.16.97.13 1.33.08.4-.06 1.3-.53 1.48-1.03.18-.5.18-.92.13-1.02-.05-.09-.19-.14-.4-.26z"/></svg>
+        WhatsApp Soporte
+      </a>
+    </section>
+  </main>
+
+  <!-- Botón flotante de WhatsApp (soporte rápido) -->
+  <a href="https://wa.me/526391691914" target="_blank" class="fixed bottom-6 right-6 bg-green-500 p-4 rounded-full shadow-lg hover:bg-green-600 transition z-50" aria-label="Soporte por WhatsApp">
+    <svg class="w-6 h-6" fill="white" viewBox="0 0 24 24"><path d="M20.52 3.48A12.07 12.07 0 0 0 12 0C5.37 0 0 5.37 0 12c0 2.11.55 4.17 1.6 6.03L0 24l6.16-1.59A12.07 12.07 0 0 0 12 24c6.63 0 12-5.37 12-12 0-3.21-1.25-6.23-3.48-8.52zM12 22c-1.88 0-3.76-.5-5.41-1.45l-.39-.23-3.65.95.98-3.58-.25-.37A9.99 9.99 0 1 1 12 22zm5.13-7.38-.9-.45c-.22-.12-1.3-.64-1.5-.7-.2-.07-.35-.1-.5.1-.15.2-.58.7-.71.85-.13.15-.25.17-.47.06-.22-.12-.92-.34-1.76-1.09-.65-.57-1.09-1.27-1.22-1.49-.13-.22-.01-.33.1-.44.1-.1.22-.25.33-.38.11-.13.15-.22.22-.36.07-.13.03-.25-.01-.37-.04-.12-.5-1.2-.69-1.65-.18-.44-.37-.38-.5-.39h-.43c-.14 0-.36.05-.56.24s-.74.72-.74 1.76.76 2.05.87 2.19c.11.14 1.5 2.29 3.64 3.13.51.22.91.35 1.22.45.51.16.97.13 1.33.08.4-.06 1.3-.53 1.48-1.03.18-.5.18-.92.13-1.02-.05-.09-.19-.14-.4-.26z"/></svg>
+  </a>
+
+  <!-- Footer -->
+  <footer class="bg-black text-gray-400 text-center py-6 mt-2">
+    <div class="flex justify-center gap-4 mb-2">
+      <a href="#" class="hover:text-blue-400" aria-label="Facebook">
+        <svg class="w-5 h-5 inline" fill="currentColor" viewBox="0 0 24 24"><path d="M22 12c0-5.522-4.477-10-10-10S2 6.478 2 12c0 4.991 3.657 9.128 8.438 9.877v-6.987h-2.54V12h2.54v-1.354c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.463h-1.26c-1.242 0-1.632.771-1.632 1.562V12h2.773l-.444 2.89h-2.33v6.987C18.343 21.128 22 16.991 22 12"></path></svg>
+      </a>
+      <a href="#" class="hover:text-blue-400" aria-label="Instagram">
+        <svg class="w-5 h-5 inline" fill="currentColor" viewBox="0 0 24 24"><path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2zm0 1.5A4.25 4.25 0 0 0 3.5 7.75v8.5A4.25 4.25 0 0 0 7.75 20.5h8.5A4.25 4.25 0 0 0 20.5 16.25v-8.5A4.25 4.25 0 0 0 16.25 3.5h-8.5zm4.25 3A5.25 5.25 0 1 1 6.75 11.75 5.25 5.25 0 0 1 12 6.5zm0 1.5a3.75 3.75 0 1 0 3.75 3.75A3.75 3.75 0 0 0 12 8zm6-1.75a1 1 0 1 1-1 1 1 1 0 0 1 1-1z"/></svg>
+      </a>
+      <a href="mailto:soporte@rideit.com" class="hover:text-blue-400" aria-label="Correo">
+        <svg class="w-5 h-5 inline" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 2v.01L12 13 4 6.01V6h16zM4 20v-9.99l7.99 7.99a1 1 0 0 0 1.41 0l7.99-7.99V20H4z"/></svg>
+      </a>
+    </div>
+    <p class="text-sm">© 2025 RideIt . Todos los derechos reservados.</p>
+    <div class="flex justify-center space-x-6 mt-2 text-xs">
+      <a href="#" class="hover:text-blue-400">Términos</a>
+      <a href="#" class="hover:text-blue-400">Privacidad</a>
+      <a href="#" class="hover:text-blue-400">Contacto</a>
+    </div>
+  </footer>
+</body>
+</html>
