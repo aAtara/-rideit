@@ -1,6 +1,6 @@
 <?php
-// Incluir la conexión a la base de datos
 include 'db.php';
+include 'csrf.php';
 session_start();
 
 // Verificar si el usuario ha iniciado sesión
@@ -100,7 +100,7 @@ $trips = $result->fetch_all(MYSQLI_ASSOC);
             <!-- Saludo dinámico -->
             <section id="greeting" class="mb-6 text-center">
                 <h2 class="text-2xl font-bold text-blue-500">
-                    <?php echo "$greeting, $userName!"; ?>
+                    <?php echo htmlspecialchars("$greeting, $userName!"); ?>
                 </h2>
                 <p class="text-sm text-gray-400">Administra tus viajes, estado y ganancias fácilmente.</p>
             </section>
@@ -134,13 +134,15 @@ $trips = $result->fetch_all(MYSQLI_ASSOC);
                                 <p class="text-xs text-gray-400"><strong>Tarifa:</strong> $<?php echo $trip['fare']; ?></p>
                                 <div class="mt-4 flex justify-between">
                                     <form action="accept_trip.php" method="POST">
-                                        <input type="hidden" name="trip_id" value="<?php echo $trip['id']; ?>">
+                                        <?php echo csrfField(); ?>
+                                        <input type="hidden" name="trip_id" value="<?php echo (int)$trip['id']; ?>">
                                         <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-600 transition">
                                             Aceptar
                                         </button>
                                     </form>
                                     <form action="reject_trip.php" method="POST">
-                                        <input type="hidden" name="trip_id" value="<?php echo $trip['id']; ?>">
+                                        <?php echo csrfField(); ?>
+                                        <input type="hidden" name="trip_id" value="<?php echo (int)$trip['id']; ?>">
                                         <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600 transition">
                                             Rechazar
                                         </button>

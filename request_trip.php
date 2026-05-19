@@ -1,31 +1,38 @@
 <?php
-// Incluir la conexión a la base de datos
 include 'db.php';
+include 'csrf.php';
 session_start();
 
-// Verificar si el usuario ha iniciado sesión
 if (!isset($_SESSION['user_id'])) {
     header("Location: login_pasajero.php");
     exit;
 }
 
-// Manejar la solicitud de un nuevo viaje
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $passengerId = $_SESSION['user_id'];
-    $pickup = $_POST['pickup'];
-    $destination = $_POST['destination'];
-    $distance = $_POST['distance'];
-    $fare = $_POST['fare'];
+    if (!validateCsrfToken()) {
+        header("Location: uberx.php?error=invalid_token");
+        exit;
+    }
 
-    // Insertar el viaje en la base de datos
+    $passengerId = $_SESSION['user_id'];
+    $pickup = trim($_POST['pickup']);
+    $destination = trim($_POST['destination']);
+    $distance = (float)$_POST['distance'];
+    $fare = (float)$_POST['fare'];
+
+    if (empty($pickup) || empty($destination) || $distance <= 0 || $fare <= 0) {
+        header("Location: uberx.php?error=invalid_data");
+        exit;
+    }
+
     $stmt = $conn->prepare("INSERT INTO trips (passenger_id, pickup_address, destination_address, distance, fare, status) VALUES (?, ?, ?, ?, ?, 'pendiente')");
     $stmt->bind_param("issdd", $passengerId, $pickup, $destination, $distance, $fare);
     if ($stmt->execute()) {
-        $tripId = $conn->insert_id; // Obtener el ID del viaje
+        $tripId = $conn->insert_id;
         header("Location: trackingpa.php?trip_id=$tripId");
         exit;
     } else {
-        echo "Error al crear el viaje. Inténtelo nuevamente.";
+        echo "Error al crear el viaje. Intentelo nuevamente.";
     }
 }
 ?>

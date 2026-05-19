@@ -1,9 +1,10 @@
 <?php
 include 'db.php';
+include 'csrf.php';
 session_start();
 
 define('REMEMBER_COOKIE_NAME', 'rideit_remember');
-define('REMEMBER_COOKIE_LIFETIME', 60 * 60 * 24 * 30); // 30 días
+define('REMEMBER_COOKIE_LIFETIME', 60 * 60 * 24 * 7);
 
 function setRememberMe($user_id, $conn) {
     $token = bin2hex(random_bytes(32));
@@ -11,7 +12,13 @@ function setRememberMe($user_id, $conn) {
     $stmt = $conn->prepare("UPDATE users SET remember_token = ? WHERE id = ?");
     $stmt->bind_param("si", $token_hash, $user_id);
     $stmt->execute();
-    setcookie(REMEMBER_COOKIE_NAME, $token, time() + REMEMBER_COOKIE_LIFETIME, "/", "", false, true);
+    setcookie(REMEMBER_COOKIE_NAME, $token, [
+        'expires' => time() + REMEMBER_COOKIE_LIFETIME,
+        'path' => '/',
+        'secure' => isset($_SERVER['HTTPS']),
+        'httponly' => true,
+        'samesite' => 'Strict'
+    ]);
 }
 
 function checkRememberMe($conn) {
@@ -24,6 +31,7 @@ function checkRememberMe($conn) {
     $stmt->execute();
     $result = $stmt->get_result();
     if ($result && $user = $result->fetch_assoc()) {
+        session_regenerate_id(true);
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_name'] = $user['name'];
         return true;
@@ -31,46 +39,48 @@ function checkRememberMe($conn) {
     return false;
 }
 
-// Intenta restaurar sesión con cookie si no hay sesión activa
 if (!isset($_SESSION['user_id'])) {
     checkRememberMe($conn);
 }
 
-// Si ya hay sesión, muestra bienvenida con recarga forzada
 if (isset($_SESSION['user_id'])) {
     include 'bienvenida.php';
     exit;
 }
 
-// --- PROCESO DE LOGIN NORMAL ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email']);
-    $password = trim($_POST['password']);
-
-    if (empty($email) || empty($password)) {
-        $error = "Por favor, completa todos los campos.";
+    if (!validateCsrfToken()) {
+        $error = "Token de seguridad invalido. Recarga la pagina.";
     } else {
-        $stmt = $conn->prepare("SELECT id, name, password FROM users WHERE email = ? AND role = 'pasajero'");
-        if ($stmt) {
-            $stmt->bind_param("s", $email);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            if ($result && $result->num_rows > 0) {
-                $user = $result->fetch_assoc();
-                if (password_verify($password, $user['password'])) {
-                    $_SESSION['user_id'] = $user['id'];
-                    $_SESSION['user_name'] = $user['name'];
-                    setRememberMe($user['id'], $conn);
-                    include 'bienvenida.php'; // <-- Aquí va la recarga forzada
-                    exit;
+        $email = trim($_POST['email']);
+        $password = trim($_POST['password']);
+
+        if (empty($email) || empty($password)) {
+            $error = "Por favor, completa todos los campos.";
+        } else {
+            $stmt = $conn->prepare("SELECT id, name, password FROM users WHERE email = ? AND role = 'pasajero'");
+            if ($stmt) {
+                $stmt->bind_param("s", $email);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                if ($result && $result->num_rows > 0) {
+                    $user = $result->fetch_assoc();
+                    if (password_verify($password, $user['password'])) {
+                        session_regenerate_id(true);
+                        $_SESSION['user_id'] = $user['id'];
+                        $_SESSION['user_name'] = $user['name'];
+                        setRememberMe($user['id'], $conn);
+                        include 'bienvenida.php';
+                        exit;
+                    } else {
+                        $error = "Contrasena incorrecta. Intentalo de nuevo.";
+                    }
                 } else {
-                    $error = "Contraseña incorrecta. Inténtalo de nuevo.";
+                    $error = "Correo no registrado o el rol no es 'pasajero'. Por favor, verifica.";
                 }
             } else {
-                $error = "Correo no registrado o el rol no es 'pasajero'. Por favor, verifica.";
+                $error = "Error en el sistema. Intenta mas tarde.";
             }
-        } else {
-            $error = "Error en la consulta: " . $conn->error;
         }
     }
 }
@@ -81,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - RideIt Usuario</title>
+    <title>Iniciar Sesion - RideIt Usuario</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css">
     <style>
         body {
@@ -115,9 +125,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </svg>
             </div>
             <h1 class="text-3xl font-extrabold text-white mb-2 text-center tracking-tight drop-shadow-lg">
-                Iniciar Sesión
+                Iniciar Sesion
             </h1>
-            <p class="text-blue-200 mb-6 text-center">¡Bienvenido de nuevo a <span class="font-bold text-blue-400">RideIt</span>!</p>
+            <p class="text-blue-200 mb-6 text-center">Bienvenido de nuevo a <span class="font-bold text-blue-400">RideIt</span>!</p>
 
             <?php if (isset($error)): ?>
                 <div class="bg-red-500/90 text-center p-3 rounded-lg mb-4 text-white shadow-md w-full animate-fade-in-down">
@@ -126,39 +136,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form action="login_pasajero.php" method="POST" class="w-full flex flex-col gap-4">
+                <?php echo csrfField(); ?>
                 <div>
-                    <label for="email" class="block text-sm font-medium text-gray-200 mb-1">Correo electrónico</label>
+                    <label for="email" class="block text-sm font-medium text-gray-200 mb-1">Correo electronico</label>
                     <input type="email" name="email" id="email" placeholder="correo@ejemplo.com" required
                         class="input w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-900 text-white focus:ring-2 focus:ring-blue-400 transition" />
                 </div>
                 <div>
-                    <label for="password" class="block text-sm font-medium text-gray-200 mb-1">Contraseña</label>
-                    <input type="password" name="password" id="password" placeholder="••••••••" required
+                    <label for="password" class="block text-sm font-medium text-gray-200 mb-1">Contrasena</label>
+                    <input type="password" name="password" id="password" placeholder="********" required
                         class="input w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-900 text-white focus:ring-2 focus:ring-blue-400 transition" />
                 </div>
                 <button type="submit"
                     class="w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white py-3 rounded-xl font-bold shadow-xl hover:scale-105 transition text-lg mt-2">
-                    Iniciar Sesión
+                    Iniciar Sesion
                 </button>
             </form>
 
             <div class="mt-6 w-full">
                 <a href="register_pasajero.php"
                    class="block w-full bg-gradient-to-r from-green-500 to-green-400 text-white py-3 rounded-xl font-bold shadow-xl hover:scale-105 transition text-center animate-bounce">
-                    ¿No tienes cuenta? Regístrate
+                    No tienes cuenta? Registrate
                 </a>
                 <a href="recuperar_password.php" class="block mt-2 text-blue-300 hover:text-blue-400 text-center text-sm transition">
-                    ¿Olvidaste tu contraseña?
+                    Olvidaste tu contrasena?
                 </a>
             </div>
         </div>
     </div>
 
     <footer class="bg-black text-gray-300 text-center py-6 mt-8 w-full">
-        <p class="text-sm">© 2025 RideIt. Todos los derechos reservados.</p>
+        <p class="text-sm">&copy; 2025 RideIt. Todos los derechos reservados.</p>
     </footer>
     <script>
-        // Fade in animation
         document.querySelectorAll('.animate-fade-in').forEach(function(el, i) {
             el.style.opacity = 0;
             setTimeout(() => {

@@ -1,9 +1,14 @@
 <?php
 include 'db.php';
+include 'csrf.php';
+session_start();
 
 $error = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCsrfToken()) {
+        $error = "Token de seguridad invalido. Recarga la pagina.";
+    } else {
     $name = trim($_POST['name']);
     $email = trim($_POST['email']);
     $phone = trim($_POST['phone']);
@@ -13,6 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($name) || empty($email) || empty($phone) || empty($plate) || empty($password)) {
         $error = "Por favor, completa todos los campos obligatorios.";
+    } elseif (!preg_match('/^[0-9]{7,15}$/', $phone)) {
+        $error = "Numero de telefono invalido.";
+    } elseif (strlen($password) < 6) {
+        $error = "La contrasena debe tener al menos 6 caracteres.";
     } else {
         // Verificar si el correo ya está registrado
         $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
@@ -35,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = "Hubo un error al registrar al conductor. Intenta de nuevo.";
             }
         }
+    }
     }
 }
 ?>
@@ -97,6 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Formulario de registro -->
         <form action="" method="POST" class="register-box p-6 rounded-lg shadow-lg w-full max-w-md space-y-4">
+            <?php echo csrfField(); ?>
             <h2 class="text-2xl font-bold text-white mb-4 text-center">Crear Cuenta de Conductor</h2>
 
             <!-- Nombre -->

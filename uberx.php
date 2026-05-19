@@ -1,6 +1,7 @@
 <?php
-// Incluir la conexión a la base de datos
 include 'db.php';
+include 'csrf.php';
+require_once 'config.php';
 session_start();
 
 // Verificar si el usuario ha iniciado sesión
@@ -31,7 +32,7 @@ while ($row = $result->fetch_assoc()) {
     <title>Solicitar un Viaje - TuApp</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css">
     <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA3xKp9oCPeRfduSHv29G_nph7u4rLHQVI&libraries=places"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo htmlspecialchars(GOOGLE_MAPS_API_KEY); ?>&libraries=places"></script>
     <style>
     body {
         background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
@@ -152,6 +153,7 @@ select:focus, input:focus {
 
             <!-- Formulario para confirmar viaje -->
             <form action="request_trip.php" method="POST">
+                <?php echo csrfField(); ?>
                 <input type="hidden" name="pickup" id="pickup-hidden">
                 <input type="hidden" name="destination" id="destination-hidden">
                 <input type="hidden" name="distance" id="distance-hidden">

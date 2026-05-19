@@ -1,9 +1,14 @@
 <?php
 include 'db.php';
+include 'csrf.php';
+session_start();
 
 $error = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCsrfToken()) {
+        $error = "Token de seguridad invalido. Recarga la pagina.";
+    } else {
     $name = trim($_POST['name']);
     $email = trim($_POST['email']);
     $phone = trim($_POST['phone']);
@@ -11,6 +16,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($name) || empty($email) || empty($phone) || empty($password)) {
         $error = "Por favor, completa todos los campos.";
+    } elseif (!preg_match('/^[0-9]{7,15}$/', $phone)) {
+        $error = "Numero de telefono invalido.";
+    } elseif (strlen($password) < 6) {
+        $error = "La contrasena debe tener al menos 6 caracteres.";
     } else {
         // Verificar si el correo ya está registrado
         $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");
@@ -33,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = "Hubo un error en el registro. Intenta de nuevo.";
             }
         }
+    }
     }
 }
 ?>
@@ -85,6 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form action="register_pasajero.php" method="POST" class="w-full flex flex-col gap-4">
+                <?php echo csrfField(); ?>
                 <div>
                     <label for="name" class="block text-sm font-medium text-gray-200 mb-1">Nombre Completo</label>
                     <input type="text" name="name" id="name" placeholder="Tu nombre completo" required

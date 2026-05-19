@@ -1,0 +1,25 @@
+# Proteger .env
+<Files .env>
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Proteger config.php de acceso directo
+<Files config.php>
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Proteger csrf.php de acceso directo
+<Files csrf.php>
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Deshabilitar ejecucion de PHP en uploads
+<Directory "uploads">
+    <FilesMatch "\.(php|phtml|php3|php4|php5|phps)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+</Directory>
