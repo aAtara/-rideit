@@ -18,8 +18,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "Por favor, completa todos los campos.";
     } elseif (!preg_match('/^[0-9]{7,15}$/', $phone)) {
         $error = "Numero de telefono invalido.";
-    } elseif (strlen($password) < 6) {
-        $error = "La contrasena debe tener al menos 6 caracteres.";
+    } elseif (strlen($password) < 8 || !preg_match('/[A-Za-z]/', $password) || !preg_match('/[0-9]/', $password)) {
+        $error = "La contrasena debe tener al menos 8 caracteres, incluir letras y numeros.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = "El correo electronico no es valido.";
     } else {
         // Verificar si el correo ya está registrado
         $stmt = $conn->prepare("SELECT id FROM users WHERE email = ?");

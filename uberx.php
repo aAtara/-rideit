@@ -315,7 +315,9 @@ select:focus, input:focus {
                             directionsRenderer.setDirections(result);
 
                             const distance = result.routes[0].legs[0].distance.value / 1000;
-                            const fare = 10 * distance;
+                            const tarifaPorKm = <?php echo json_encode(TARIFA_POR_KM); ?>;
+                            const tarifaBase = <?php echo json_encode(TARIFA_BASE); ?>;
+                            const fare = tarifaBase + (tarifaPorKm * distance);
 
                             document.getElementById("distance").textContent = `${distance.toFixed(2)} km`;
                             document.getElementById("estimated-fare").textContent = `$${fare.toFixed(2)}`;

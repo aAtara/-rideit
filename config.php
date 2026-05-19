@@ -29,3 +29,7 @@ define('DB_PASS_REMOTE', env('DB_PASS_REMOTE', ''));
 define('DB_NAME_REMOTE', env('DB_NAME_REMOTE', ''));
 
 define('GOOGLE_MAPS_API_KEY', env('GOOGLE_MAPS_API_KEY', ''));
+
+// Configuracion de tarifas (pesos por km)
+define('TARIFA_POR_KM', (float)env('TARIFA_POR_KM', '10'));
+define('TARIFA_BASE', (float)env('TARIFA_BASE', '15'));
