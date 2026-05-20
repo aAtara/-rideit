@@ -156,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Enlace a iniciar sesión -->
         <p class="mt-4 text-sm text-gray-400">
-            ¿Ya tienes una cuenta? <a href="login.html" class="text-blue-400 hover:underline">Inicia Sesión</a>
+            ¿Ya tienes una cuenta? <a href="login_conductor.php" class="text-blue-400 hover:underline">Inicia Sesión</a>
         </p>
     </div>
 

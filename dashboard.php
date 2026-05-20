@@ -5,7 +5,7 @@ session_start();
 
 // Verificar si el usuario ha iniciado sesión
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.html");
+    header("Location: login_conductor.php");
     exit;
 }
 
