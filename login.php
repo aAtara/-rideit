@@ -5,7 +5,7 @@ session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validateCsrfToken()) {
-        header("Location: login.html?error=invalid_token");
+        header("Location: login_conductor.php?error=invalid_token");
         exit;
     }
 
@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = trim($_POST['password']);
 
     if (empty($email) || empty($password)) {
-        header("Location: login.html?error=empty_fields");
+        header("Location: login_conductor.php?error=empty_fields");
         exit;
     }
 
@@ -36,15 +36,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: dashboard.php");
             exit;
         } else {
-            header("Location: login.html?error=invalid_password");
+            header("Location: login_conductor.php?error=invalid_password");
             exit;
         }
     } else {
-        header("Location: login.html?error=user_not_found");
+        header("Location: login_conductor.php?error=user_not_found");
         exit;
     }
 } else {
-    header("Location: login.html");
+    header("Location: login_conductor.php");
     exit;
 }
 ?>
