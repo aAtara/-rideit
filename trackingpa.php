@@ -126,8 +126,8 @@ $mapsApiKey = GOOGLE_MAPS_API_KEY;
                         if (data.status === "afuera") {
                             showNotification("El conductor esta afuera.");
                         } else if (data.status === "completado") {
-                            showNotification("El viaje ha finalizado.");
-                            setTimeout(() => { window.location.href = "dashboardpa.php"; }, 3000);
+                            showNotification("El viaje ha finalizado. Redirigiendo a calificar...");
+                            setTimeout(() => { window.location.href = "calificar_viaje.php?trip_id=" + <?php echo json_encode($tripId); ?>; }, 3000);
                         }
                         previousStatus = data.status;
                     }
