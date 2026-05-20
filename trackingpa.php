@@ -69,8 +69,17 @@ $mapsApiKey = GOOGLE_MAPS_API_KEY;
             <div id="map"></div>
             <div class="bg-white p-4 rounded-xl shadow-md space-y-4">
                 <h2 class="text-lg font-bold">Detalles del Viaje</h2>
-                <p id="status" class="text-sm text-indigo-600 font-bold">
-                    <?php echo htmlspecialchars($trip['status'] === 'asignado' ? 'El conductor esta en camino.' : 'Esperando a que un conductor tome su solicitud...'); ?>
+                <p id="status" class="text-sm font-bold" style="font-size: 1.1rem;">
+                    <?php
+                        $statusTexts = [
+                            'pendiente' => '⏳ Esperando a que un conductor tome tu solicitud...',
+                            'asignado' => '🚗 El conductor esta en camino al punto de recogida.',
+                            'afuera' => '📍 El conductor ha llegado y esta esperando afuera.',
+                            'en_destino' => '🛣️ Viaje en curso. Dirigiendose al destino.',
+                            'completado' => '✅ Viaje finalizado.'
+                        ];
+                        echo htmlspecialchars($statusTexts[$trip['status']] ?? 'Estado desconocido');
+                    ?>
                 </p>
                 <p id="pickup" class="text-sm"><strong>Recoger en:</strong> <?php echo htmlspecialchars($trip['pickup_address'] ?? 'No disponible'); ?></p>
                 <p id="destination" class="text-sm"><strong>Destino:</strong> <?php echo htmlspecialchars($trip['destination_address'] ?? 'No disponible'); ?></p>
@@ -101,6 +110,14 @@ $mapsApiKey = GOOGLE_MAPS_API_KEY;
     <script>
         let map, driverMarker, previousStatus = null;
 
+        const statusMessages = {
+            'pendiente': { text: 'Esperando a que un conductor tome tu solicitud...', color: '#eab308', icon: '⏳' },
+            'asignado': { text: 'El conductor esta en camino al punto de recogida.', color: '#3b82f6', icon: '🚗' },
+            'afuera': { text: 'El conductor ha llegado y esta esperando afuera.', color: '#f97316', icon: '📍' },
+            'en_destino': { text: 'Viaje en curso. Dirigiendose al destino.', color: '#8b5cf6', icon: '🛣️' },
+            'completado': { text: 'Viaje finalizado. Gracias por viajar con RideIt!', color: '#22c55e', icon: '✅' }
+        };
+
         function initMap() {
             map = new google.maps.Map(document.getElementById("map"), { center: { lat: 28.1973, lng: -105.4702 }, zoom: 14 });
             driverMarker = new google.maps.Marker({ map, title: "Conductor", icon: "http://maps.google.com/mapfiles/ms/icons/taxi.png" });
@@ -112,28 +129,46 @@ $mapsApiKey = GOOGLE_MAPS_API_KEY;
             fetch(`trip_status.php?trip_id=${tripId}`)
                 .then((response) => response.json())
                 .then((data) => {
-                    if (data.status === "asignado") {
-                        document.getElementById("status").textContent = "El conductor esta en camino.";
-                        document.getElementById("driver").textContent = `Conductor: ${data.driver_name}`;
-                        document.getElementById("driverPlate").textContent = `Placa: ${data.driver_plate}`;
-                        const driverLocation = data.driver_location;
-                        if (driverLocation) {
-                            driverMarker.setPosition(driverLocation);
-                            map.setCenter(driverLocation);
-                        }
+                    const statusEl = document.getElementById("status");
+                    const driverEl = document.getElementById("driver");
+                    const plateEl = document.getElementById("driverPlate");
+                    const msg = statusMessages[data.status] || statusMessages['pendiente'];
+
+                    // Actualizar texto de estado siempre
+                    statusEl.textContent = msg.icon + ' ' + msg.text;
+                    statusEl.style.color = msg.color;
+
+                    // Actualizar info del conductor si existe
+                    if (data.driver_name && data.driver_name !== "No asignado") {
+                        driverEl.innerHTML = '<strong>Conductor:</strong> ' + data.driver_name;
+                        driverEl.style.color = '#22c55e';
+                        plateEl.innerHTML = '<strong>Placa:</strong> ' + (data.driver_plate || 'N/A');
                     }
-                    if (data.status !== previousStatus) {
-                        if (data.status === "afuera") {
-                            showNotification("El conductor esta afuera.");
+
+                    // Actualizar ubicacion del conductor en el mapa
+                    if (data.driver_location) {
+                        driverMarker.setPosition(data.driver_location);
+                        map.setCenter(data.driver_location);
+                    }
+
+                    // Notificaciones cuando cambia el estado
+                    if (data.status !== previousStatus && previousStatus !== null) {
+                        if (data.status === "asignado") {
+                            showNotification("Conductor asignado: " + data.driver_name);
+                        } else if (data.status === "afuera") {
+                            showNotification("Tu conductor ha llegado y esta esperando.");
+                        } else if (data.status === "en_destino") {
+                            showNotification("Viaje iniciado. En camino al destino.");
                         } else if (data.status === "completado") {
-                            showNotification("El viaje ha finalizado. Redirigiendo a calificar...");
-                            setTimeout(() => { window.location.href = "calificar_viaje.php?trip_id=" + <?php echo json_encode($tripId); ?>; }, 3000);
+                            showNotification("Viaje finalizado. Redirigiendo a calificar...");
+                            setTimeout(() => { window.location.href = "calificar_viaje.php?trip_id=" + tripId; }, 3000);
+                            return; // No seguir polling
                         }
-                        previousStatus = data.status;
                     }
+                    previousStatus = data.status;
                 })
                 .catch((error) => console.error("Error al actualizar el estado del viaje:", error));
-            setTimeout(updateTripStatus, 5000);
+            setTimeout(updateTripStatus, 3000);
         }
 
         function showNotification(message) {
