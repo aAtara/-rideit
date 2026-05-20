@@ -149,6 +149,10 @@ select:focus, input:focus {
                     <p class="text-sm font-medium text-gray-700">Distancia:</p>
                     <p id="distance" class="text-sm font-bold text-indigo-600">0 km</p>
                 </div>
+                <div class="flex justify-between items-center">
+                    <p class="text-sm font-medium text-gray-700">Tiempo Estimado (ETA):</p>
+                    <p id="eta" class="text-sm font-bold text-indigo-600">-- min</p>
+                </div>
             </div>
 
             <!-- Formulario para confirmar viaje -->
@@ -315,12 +319,14 @@ select:focus, input:focus {
                             directionsRenderer.setDirections(result);
 
                             const distance = result.routes[0].legs[0].distance.value / 1000;
+                            const duration = result.routes[0].legs[0].duration.text;
                             const tarifaPorKm = <?php echo json_encode(TARIFA_POR_KM); ?>;
                             const tarifaBase = <?php echo json_encode(TARIFA_BASE); ?>;
                             const fare = tarifaBase + (tarifaPorKm * distance);
 
                             document.getElementById("distance").textContent = `${distance.toFixed(2)} km`;
                             document.getElementById("estimated-fare").textContent = `$${fare.toFixed(2)}`;
+                            document.getElementById("eta").textContent = duration;
                         }
                     }
                 );

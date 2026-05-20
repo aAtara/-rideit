@@ -118,6 +118,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="password" name="password" id="password" placeholder="Crea una contraseña segura" required
                         class="input w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-900 text-white focus:ring-2 focus:ring-blue-400 transition" />
                 </div>
+                <p class="text-xs text-gray-400 mt-2 text-center">
+                    Al registrarte, aceptas nuestros
+                    <a href="terminos.php" class="text-blue-300 hover:underline">Terminos y Condiciones</a> y
+                    <a href="privacidad.php" class="text-blue-300 hover:underline">Aviso de Privacidad</a>.
+                </p>
                 <button type="submit"
                     class="w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white py-3 rounded-xl font-bold shadow-xl hover:scale-105 transition text-lg mt-2">
                     Registrarse

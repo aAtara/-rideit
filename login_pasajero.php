@@ -167,6 +167,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <footer class="bg-black text-gray-300 text-center py-6 mt-8 w-full">
         <p class="text-sm">&copy; 2025 RideIt. Todos los derechos reservados.</p>
+        <p class="text-xs mt-1">
+            <a href="privacidad.php" class="text-blue-300 hover:underline">Aviso de Privacidad</a>
+            <span class="mx-1">|</span>
+            <a href="terminos.php" class="text-blue-300 hover:underline">Terminos y Condiciones</a>
+        </p>
     </footer>
     <script>
         document.querySelectorAll('.animate-fade-in').forEach(function(el, i) {

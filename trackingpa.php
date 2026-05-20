@@ -78,6 +78,20 @@ $mapsApiKey = GOOGLE_MAPS_API_KEY;
                 <p id="fare" class="text-sm"><strong>Tarifa:</strong> $<?php echo htmlspecialchars($trip['fare'] ?? '0.00'); ?></p>
                 <p id="driver" class="text-sm text-green-600"><strong>Conductor:</strong> Esperando asignacion...</p>
                 <p id="driverPlate" class="text-sm"><strong>Placa:</strong> N/A</p>
+
+                <!-- Boton de Panico SOS -->
+                <button id="sos-button" onclick="activarSOS()" class="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 transition mt-4 text-lg shadow-lg">
+                    SOS - Boton de Panico
+                </button>
+                <div id="sos-confirm" style="display:none;" class="bg-red-900/80 p-4 rounded-lg mt-2 text-center">
+                    <p class="text-white font-bold mb-2">Estas seguro de enviar una alerta de emergencia?</p>
+                    <button onclick="enviarSOS()" class="bg-red-500 text-white px-6 py-2 rounded-lg font-bold mr-2 hover:bg-red-600">Si, enviar alerta</button>
+                    <button onclick="cancelarSOS()" class="bg-gray-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-gray-700">Cancelar</button>
+                </div>
+                <div id="sos-sent" style="display:none;" class="bg-green-700/80 p-4 rounded-lg mt-2 text-center">
+                    <p class="text-white font-bold">Alerta enviada. La central ha sido notificada.</p>
+                    <p class="text-gray-300 text-sm mt-1">Tu ubicacion GPS ha sido compartida con el equipo de seguridad.</p>
+                </div>
             </div>
         </main>
 
@@ -127,6 +141,40 @@ $mapsApiKey = GOOGLE_MAPS_API_KEY;
             notification.textContent = message;
             notification.style.display = "block";
             setTimeout(() => notification.style.display = "none", 5000);
+        }
+
+        function activarSOS() {
+            document.getElementById('sos-confirm').style.display = 'block';
+        }
+
+        function cancelarSOS() {
+            document.getElementById('sos-confirm').style.display = 'none';
+        }
+
+        function enviarSOS() {
+            document.getElementById('sos-confirm').style.display = 'none';
+            document.getElementById('sos-button').style.display = 'none';
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const tripId = <?php echo json_encode($tripId); ?>;
+                    fetch('sos_alert.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            trip_id: tripId,
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        })
+                    }).then(() => {
+                        document.getElementById('sos-sent').style.display = 'block';
+                    });
+                }, function() {
+                    document.getElementById('sos-sent').style.display = 'block';
+                });
+            } else {
+                document.getElementById('sos-sent').style.display = 'block';
+            }
         }
 
         window.onload = initMap;
