@@ -101,22 +101,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div>
                     <label for="name" class="block text-sm font-medium text-gray-200 mb-1">Nombre Completo</label>
                     <input type="text" name="name" id="name" placeholder="Tu nombre completo" required
+                        value="<?php echo htmlspecialchars($_POST['name'] ?? ''); ?>"
                         class="input w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-900 text-white focus:ring-2 focus:ring-blue-400 transition" />
                 </div>
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-200 mb-1">Correo electrónico</label>
                     <input type="email" name="email" id="email" placeholder="correo@ejemplo.com" required
+                        value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
                         class="input w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-900 text-white focus:ring-2 focus:ring-blue-400 transition" />
                 </div>
                 <div>
                     <label for="phone" class="block text-sm font-medium text-gray-200 mb-1">Teléfono</label>
                     <input type="text" name="phone" id="phone" placeholder="Ej. 5551234567" required
+                        value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
                         class="input w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-900 text-white focus:ring-2 focus:ring-blue-400 transition" />
                 </div>
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-200 mb-1">Contraseña</label>
                     <input type="password" name="password" id="password" placeholder="Crea una contraseña segura" required
+                        value="<?php echo htmlspecialchars($_POST['password'] ?? ''); ?>"
                         class="input w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-900 text-white focus:ring-2 focus:ring-blue-400 transition" />
+                    <div id="password-strength" class="mt-2 text-xs hidden">
+                        <div class="w-full bg-gray-700 rounded-full h-2 mb-1">
+                            <div id="strength-bar" class="h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                        <p id="strength-text" class="text-gray-400"></p>
+                    </div>
                 </div>
                 <p class="text-xs text-gray-400 mt-2 text-center">
                     Al registrarte, aceptas nuestros
@@ -142,6 +152,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p class="text-sm">© 2025 RideIt. Todos los derechos reservados.</p>
     </footer>
     <script>
+        // Validacion de contraseña en tiempo real
+        const passInput = document.getElementById('password');
+        const strengthDiv = document.getElementById('password-strength');
+        const strengthBar = document.getElementById('strength-bar');
+        const strengthText = document.getElementById('strength-text');
+
+        passInput.addEventListener('input', function() {
+            const val = this.value;
+            if (val.length === 0) { strengthDiv.classList.add('hidden'); return; }
+            strengthDiv.classList.remove('hidden');
+
+            let score = 0;
+            let msgs = [];
+            if (val.length >= 8) { score++; } else { msgs.push('Minimo 8 caracteres'); }
+            if (/[A-Za-z]/.test(val)) { score++; } else { msgs.push('Incluir letras'); }
+            if (/[0-9]/.test(val)) { score++; } else { msgs.push('Incluir numeros'); }
+
+            const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e'];
+            const labels = ['Muy debil', 'Debil', 'Aceptable', 'Segura'];
+            const pct = [25, 50, 75, 100];
+
+            strengthBar.style.width = pct[score] + '%';
+            strengthBar.style.backgroundColor = colors[score];
+            strengthText.textContent = labels[score] + (msgs.length ? ' - ' + msgs.join(', ') : '');
+            strengthText.style.color = colors[score];
+        });
+
         // Fade in animation
         document.querySelectorAll('.animate-fade-in').forEach(function(el, i) {
             el.style.opacity = 0;

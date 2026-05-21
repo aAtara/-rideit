@@ -1,8 +1,21 @@
 <?php
 include 'db.php';
+include 'csrf.php';
 session_start();
 
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'No autenticado.']);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validateCsrfToken()) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'message' => 'Token de seguridad invalido.']);
+        exit;
+    }
+
     $user_id = $_SESSION['user_id'];
     $type = trim($_POST['type']);
     $address = trim($_POST['address']);

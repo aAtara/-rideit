@@ -3,9 +3,21 @@ include 'db.php';
 include 'csrf.php';
 session_start();
 
-// Verificar si el usuario ha iniciado sesión
+// Verificar si el usuario ha iniciado sesión como pasajero
 if (!isset($_SESSION['user_id'])) {
     header("Location: login_pasajero.php");
+    exit;
+}
+
+// Si es admin, redirigir al panel admin
+if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin') {
+    header("Location: admin_panel.php");
+    exit;
+}
+
+// Si es conductor, redirigir al dashboard de conductor
+if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'conductor') {
+    header("Location: dashboard.php");
     exit;
 }
 
@@ -76,7 +88,8 @@ if ($colCheck && $colCheck->num_rows > 0) {
         $stmt->bind_param("i", $userId);
         $stmt->execute();
         $res = $stmt->get_result();
-        if ($row = $res->fetch_assoc() && !is_null($row['promedio'])) {
+        $row = $res->fetch_assoc();
+        if ($row && !is_null($row['promedio'])) {
             $calificacionPromedio = round($row['promedio'],1);
         }
         $stmt->close();
@@ -133,6 +146,7 @@ if ($colPhoto && $colPhoto->num_rows > 0) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - RideIt Pasajeros</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css">
+    <link rel="stylesheet" href="modal.css">
     <style>
         body {
             background: linear-gradient(135deg, #01579B 0%, #003366 100%);
@@ -191,11 +205,9 @@ if ($colPhoto && $colPhoto->num_rows > 0) {
                 <a href="profilepa.php" class="bg-indigo-500 px-4 py-2 rounded-lg text-sm font-bold hover:bg-indigo-600 transition">
                     Perfil
                 </a>
-                <form action="logoutpa.php" method="POST" class="inline">
-                    <button type="submit" class="btn-logout px-4 py-2 rounded-lg text-sm font-bold hover:shadow-md transition">
-                        Cerrar Sesión
-                    </button>
-                </form>
+                <button type="button" onclick="confirmLogout()" class="btn-logout px-4 py-2 rounded-lg text-sm font-bold hover:shadow-md transition">
+                    Cerrar Sesión
+                </button>
             </div>
         </header>
 
@@ -209,8 +221,15 @@ if ($colPhoto && $colPhoto->num_rows > 0) {
             </div>
             <?php endif; ?>
 
-            <!-- Saludo dinámico -->
+            <!-- Saludo dinámico con foto prominente -->
             <section class="mb-6 text-center animate-fade-in">
+                <?php if ($profilePhoto): ?>
+                    <img src="<?php echo htmlspecialchars($profilePhoto); ?>" alt="Tu perfil" class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-blue-400 object-cover shadow-lg">
+                <?php else: ?>
+                    <div class="w-20 h-20 rounded-full mx-auto mb-3 border-4 border-blue-400 bg-blue-900/50 flex items-center justify-center shadow-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="white"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a8 8 0 00-8 8h16a8 8 0 00-8-8z"/></svg>
+                    </div>
+                <?php endif; ?>
                 <h2 class="text-2xl font-bold text-white flex items-center justify-center gap-2">
                     <?php echo "$greeting, " . htmlspecialchars($userName) . "!"; ?>
                     <?php if (!is_null($calificacionPromedio)): ?>
@@ -219,7 +238,7 @@ if ($colPhoto && $colPhoto->num_rows > 0) {
                         </span>
                     <?php endif; ?>
                 </h2>
-                <p class="text-sm text-blue-200">¿Qué puedo hacer por ti hoy?</p>
+                <p class="text-sm text-blue-200">¿Que puedo hacer por ti hoy?</p>
             </section>
 
             <!-- Resumen rápido -->
@@ -328,8 +347,9 @@ if ($colPhoto && $colPhoto->num_rows > 0) {
             </div>
         </footer>
     </div>
+    <script src="modal.js"></script>
     <script>
-        // Fade in animationa
+        // Fade in animation
         document.querySelectorAll('.animate-fade-in').forEach(function(el, i) {
             el.style.opacity = 0;
             setTimeout(() => {
@@ -337,6 +357,17 @@ if ($colPhoto && $colPhoto->num_rows > 0) {
                 el.style.opacity = 1;
             }, 100 + i * 150);
         });
+
+        function confirmLogout() {
+            RideIt.confirm({
+                title: 'Cerrar sesion',
+                message: '¿Deseas cerrar tu sesion? Tendras que volver a iniciar sesion para solicitar viajes.',
+                type: 'warning',
+                confirmText: 'Cerrar sesion',
+                confirmClass: 'btn-danger',
+                onConfirm: () => window.location.href = 'logoutpa.php'
+            });
+        }
     </script>
 </body>
 </html>

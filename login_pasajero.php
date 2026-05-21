@@ -26,7 +26,7 @@ function checkRememberMe($conn) {
     if (!isset($_COOKIE[REMEMBER_COOKIE_NAME])) return false;
     $token = $_COOKIE[REMEMBER_COOKIE_NAME];
     $token_hash = hash('sha256', $token);
-    $stmt = $conn->prepare("SELECT id, name FROM users WHERE remember_token = ?");
+    $stmt = $conn->prepare("SELECT id, name, role FROM users WHERE remember_token = ?");
     $stmt->bind_param("s", $token_hash);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -34,6 +34,7 @@ function checkRememberMe($conn) {
         session_regenerate_id(true);
         $_SESSION['user_id'] = $user['id'];
         $_SESSION['user_name'] = $user['name'];
+        $_SESSION['user_role'] = $user['role'];
         return true;
     }
     return false;
@@ -69,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         session_regenerate_id(true);
                         $_SESSION['user_id'] = $user['id'];
                         $_SESSION['user_name'] = $user['name'];
+                        $_SESSION['user_role'] = 'pasajero';
                         setRememberMe($user['id'], $conn);
                         include 'bienvenida.php';
                         exit;
@@ -129,6 +131,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </h1>
             <p class="text-blue-200 mb-6 text-center">Bienvenido de nuevo a <span class="font-bold text-blue-400">RideIt</span>!</p>
 
+            <?php if (isset($_GET['success']) && $_GET['success'] === 'registered'): ?>
+                <div class="bg-green-500/90 text-center p-3 rounded-lg mb-4 text-white shadow-md w-full animate-fade-in-down">
+                    Registro exitoso. Inicia sesion con tus credenciales.
+                </div>
+            <?php endif; ?>
             <?php if (isset($error)): ?>
                 <div class="bg-red-500/90 text-center p-3 rounded-lg mb-4 text-white shadow-md w-full animate-fade-in-down">
                     <?php echo htmlspecialchars($error); ?>

@@ -24,6 +24,12 @@ session_start();
         <h1 class="text-3xl font-extrabold text-white mb-2 text-center">Conductor</h1>
         <p class="text-green-200 mb-6 text-center">Inicia sesion en <span class="font-bold text-green-400">RideIt</span></p>
 
+        <?php if (isset($_GET['success']) && $_GET['success'] === 'registered'): ?>
+            <div class="bg-green-500/90 text-center p-3 rounded-lg mb-4 text-white shadow-md w-full">
+                Registro exitoso. Inicia sesion con tus credenciales.
+            </div>
+        <?php endif; ?>
+
         <?php if (isset($_GET['error'])): ?>
             <div class="bg-red-500/90 text-center p-3 rounded-lg mb-4 text-white shadow-md w-full">
                 <?php

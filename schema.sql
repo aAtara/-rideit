@@ -8,13 +8,17 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(150) NOT NULL UNIQUE,
     phone VARCHAR(20),
     password VARCHAR(255) NOT NULL,
-    role ENUM('pasajero', 'conductor') NOT NULL DEFAULT 'pasajero',
+    role ENUM('pasajero', 'conductor', 'admin') NOT NULL DEFAULT 'pasajero',
     plate VARCHAR(20) DEFAULT NULL,
     description TEXT DEFAULT NULL,
     photo VARCHAR(255) DEFAULT NULL,
     remember_token VARCHAR(64) DEFAULT NULL,
+    payment_method VARCHAR(30) DEFAULT 'efectivo',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Agregar rol admin si la tabla ya existe con ENUM sin admin
+-- ALTER TABLE users MODIFY COLUMN role ENUM('pasajero', 'conductor', 'admin') NOT NULL DEFAULT 'pasajero';
 
 CREATE TABLE IF NOT EXISTS trips (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -24,8 +28,12 @@ CREATE TABLE IF NOT EXISTS trips (
     destination_address VARCHAR(255) NOT NULL,
     distance DOUBLE DEFAULT 0,
     fare DOUBLE DEFAULT 0,
+    service_type VARCHAR(20) DEFAULT 'economico',
     status ENUM('pendiente', 'asignado', 'en_destino', 'afuera', 'completado', 'rechazado') NOT NULL DEFAULT 'pendiente',
+    payment_method VARCHAR(30) DEFAULT 'efectivo',
+    payment_status VARCHAR(20) DEFAULT 'pendiente',
     rating TINYINT DEFAULT NULL,
+    comment TEXT DEFAULT NULL,
     completed_at DATETIME DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (passenger_id) REFERENCES users(id),

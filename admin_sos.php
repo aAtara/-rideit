@@ -3,7 +3,13 @@ include 'db.php';
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login_conductor.php");
+    header("Location: login_admin.php");
+    exit;
+}
+
+// Verificar que es administrador
+if (!isset($_SESSION['user_role']) || $_SESSION['user_role'] !== 'admin') {
+    header("Location: login_admin.php");
     exit;
 }
 
@@ -41,7 +47,7 @@ if ($tableExists && $tableExists->num_rows > 0) {
 
     <header class="bg-red-800 text-white px-4 py-3 flex justify-between items-center shadow-lg">
         <h1 class="text-xl font-bold">🚨 Alertas SOS</h1>
-        <a href="dashboard.php" class="bg-white text-red-600 px-4 py-2 rounded-lg text-sm font-bold">Volver</a>
+        <a href="admin_panel.php" class="bg-white text-red-600 px-4 py-2 rounded-lg text-sm font-bold">Volver</a>
     </header>
 
     <main class="p-4 max-w-3xl mx-auto space-y-4">

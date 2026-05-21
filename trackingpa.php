@@ -16,8 +16,11 @@ if (!$tripId) {
 }
 
 $stmt = $conn->prepare("
-    SELECT pickup_address, destination_address, distance, fare, status
-    FROM trips WHERE id = ? AND passenger_id = ?
+    SELECT t.pickup_address, t.destination_address, t.distance, t.fare, t.status,
+           t.service_type, t.driver_id, d.photo AS driver_photo
+    FROM trips t
+    LEFT JOIN users d ON t.driver_id = d.id
+    WHERE t.id = ? AND t.passenger_id = ?
 ");
 $stmt->bind_param("ii", $tripId, $userId);
 $stmt->execute();
@@ -37,6 +40,7 @@ $mapsApiKey = GOOGLE_MAPS_API_KEY;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seguimiento del Viaje</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css">
+    <link rel="stylesheet" href="modal.css">
     <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo htmlspecialchars($mapsApiKey); ?>&libraries=places"></script>
     <style>
       body { background: #1e293b; color: #f8fafc; }
@@ -81,12 +85,31 @@ $mapsApiKey = GOOGLE_MAPS_API_KEY;
                         echo htmlspecialchars($statusTexts[$trip['status']] ?? 'Estado desconocido');
                     ?>
                 </p>
+                <?php
+                    $svcLabels = ['economico' => 'Economico', 'confort' => 'Confort'];
+                    $svcType = $trip['service_type'] ?? 'economico';
+                ?>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="text-xs px-3 py-1 rounded-full font-bold <?php echo $svcType === 'confort' ? 'bg-purple-600/30 text-purple-300' : 'bg-blue-600/30 text-blue-300'; ?>">
+                        <?php echo ($svcType === 'confort' ? '✨' : '🚗') . ' ' . htmlspecialchars($svcLabels[$svcType] ?? 'Economico'); ?>
+                    </span>
+                </div>
                 <p id="pickup" class="text-sm"><strong>Recoger en:</strong> <?php echo htmlspecialchars($trip['pickup_address'] ?? 'No disponible'); ?></p>
                 <p id="destination" class="text-sm"><strong>Destino:</strong> <?php echo htmlspecialchars($trip['destination_address'] ?? 'No disponible'); ?></p>
                 <p id="distance" class="text-sm"><strong>Distancia:</strong> <?php echo htmlspecialchars($trip['distance'] ?? '0'); ?> km</p>
                 <p id="fare" class="text-sm"><strong>Tarifa:</strong> $<?php echo htmlspecialchars($trip['fare'] ?? '0.00'); ?></p>
-                <p id="driver" class="text-sm text-green-600"><strong>Conductor:</strong> Esperando asignacion...</p>
-                <p id="driverPlate" class="text-sm"><strong>Placa:</strong> N/A</p>
+                <!-- Info del conductor con foto -->
+                <div id="driver-info" class="flex items-center gap-3 mt-2 p-3 bg-gray-800/50 rounded-lg">
+                    <div id="driver-photo-container">
+                        <div class="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center border-2 border-gray-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="#9ca3af"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a8 8 0 00-8 8h16a8 8 0 00-8-8z"/></svg>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <p id="driver" class="text-sm text-green-600 font-semibold">Esperando asignacion...</p>
+                        <p id="driverPlate" class="text-xs text-gray-400">Placa: N/A</p>
+                    </div>
+                </div>
 
                 <!-- Boton de Panico SOS -->
                 <button id="sos-button" onclick="activarSOS()" class="w-full bg-red-600 text-white py-3 rounded-lg font-bold hover:bg-red-700 transition mt-4 text-lg shadow-lg">
@@ -138,11 +161,22 @@ $mapsApiKey = GOOGLE_MAPS_API_KEY;
                     statusEl.textContent = msg.icon + ' ' + msg.text;
                     statusEl.style.color = msg.color;
 
-                    // Actualizar info del conductor si existe
+                    // Actualizar info del conductor con foto si existe
                     if (data.driver_name && data.driver_name !== "No asignado") {
-                        driverEl.innerHTML = '<strong>Conductor:</strong> ' + data.driver_name;
+                        driverEl.textContent = data.driver_name;
                         driverEl.style.color = '#22c55e';
-                        plateEl.innerHTML = '<strong>Placa:</strong> ' + (data.driver_plate || 'N/A');
+                        plateEl.textContent = 'Placa: ' + (data.driver_plate || 'N/A');
+
+                        // Mostrar foto del conductor de forma segura
+                        if (data.driver_photo) {
+                            const photoContainer = document.getElementById('driver-photo-container');
+                            const img = document.createElement('img');
+                            img.src = data.driver_photo;
+                            img.alt = 'Conductor';
+                            img.className = 'w-12 h-12 rounded-full border-2 border-green-500 object-cover';
+                            photoContainer.textContent = '';
+                            photoContainer.appendChild(img);
+                        }
                     }
 
                     // Actualizar ubicacion del conductor en el mapa
@@ -151,17 +185,17 @@ $mapsApiKey = GOOGLE_MAPS_API_KEY;
                         map.setCenter(data.driver_location);
                     }
 
-                    // Notificaciones cuando cambia el estado
+                    // Notificaciones cuando cambia el estado (RF11)
                     if (data.status !== previousStatus && previousStatus !== null) {
                         if (data.status === "asignado") {
-                            showNotification("Conductor asignado: " + data.driver_name);
+                            RideIt.toast("Conductor asignado: " + data.driver_name, "success");
                         } else if (data.status === "afuera") {
-                            showNotification("Tu conductor ha llegado y esta esperando.");
+                            RideIt.toast("Tu conductor ha llegado y esta esperando afuera.", "warning");
                         } else if (data.status === "en_destino") {
-                            showNotification("Viaje iniciado. En camino al destino.");
+                            RideIt.toast("Viaje iniciado. En camino al destino.", "info");
                         } else if (data.status === "completado") {
-                            showNotification("Viaje finalizado. Redirigiendo a calificar...");
-                            setTimeout(() => { window.location.href = "calificar_viaje.php?trip_id=" + tripId; }, 3000);
+                            RideIt.toast("Viaje finalizado. Redirigiendo al pago...", "success");
+                            setTimeout(() => { window.location.href = "pagar_viaje.php?trip_id=" + tripId; }, 3000);
                             return; // No seguir polling
                         }
                     }
@@ -214,5 +248,6 @@ $mapsApiKey = GOOGLE_MAPS_API_KEY;
 
         window.onload = initMap;
     </script>
+    <script src="modal.js"></script>
 </body>
 </html>

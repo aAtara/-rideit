@@ -15,7 +15,8 @@ $driverId = $_SESSION['user_id'];
 
 // Obtener el historial de viajes completados para este conductor
 $stmt = $conn->prepare("
-    SELECT t.completed_at, t.fare, u.name AS passenger_name
+    SELECT t.id, t.completed_at, t.fare, t.pickup_address, t.destination_address,
+           t.rating, t.service_type, t.payment_method, t.payment_status, u.name AS passenger_name
     FROM trips t
     JOIN users u ON t.passenger_id = u.id
     WHERE t.driver_id = ? AND t.status = 'completado'
@@ -50,21 +51,43 @@ $trips = $result->fetch_all(MYSQLI_ASSOC);
         <div class="space-y-4">
             <?php if (count($trips) > 0): ?>
                 <?php foreach ($trips as $trip): ?>
+                    <?php
+                        $svcLabels = ['economico' => 'Economico', 'confort' => 'Confort'];
+                        $payLabelsHist = ['efectivo' => 'Efectivo', 'tarjeta_debito' => 'T. Debito', 'tarjeta_credito' => 'T. Credito'];
+                    ?>
                     <div class="bg-gray-800 p-4 rounded-lg shadow-md border-l-4 border-green-500">
-                        <p class="text-sm font-semibold text-gray-300">
-                            <i class="fas fa-calendar-alt"></i> <strong>Fecha:</strong> 
-                            <?php 
-                                echo !empty($trip['completed_at']) ? 
-                                    date("d/m/Y", strtotime($trip['completed_at'])) : 
-                                    "Fecha no disponible"; 
-                            ?>
+                        <div class="flex justify-between items-start mb-1">
+                            <p class="text-sm font-semibold text-gray-300">
+                                <i class="fas fa-calendar-alt"></i> <strong>Fecha:</strong>
+                                <?php
+                                    echo !empty($trip['completed_at']) ?
+                                        date("d/m/Y", strtotime($trip['completed_at'])) :
+                                        "Fecha no disponible";
+                                ?>
+                            </p>
+                            <span class="text-xs bg-green-600/30 text-green-300 px-2 py-1 rounded-full"><?php echo htmlspecialchars($svcLabels[$trip['service_type'] ?? 'economico'] ?? 'Economico'); ?></span>
+                        </div>
+                        <p class="text-sm text-gray-400">
+                            <i class="fas fa-map-marker-alt"></i> <strong>Origen:</strong> <?php echo htmlspecialchars($trip['pickup_address'] ?? 'No disponible'); ?>
+                        </p>
+                        <p class="text-sm text-gray-400">
+                            <i class="fas fa-flag-checkered"></i> <strong>Destino:</strong> <?php echo htmlspecialchars($trip['destination_address'] ?? 'No disponible'); ?>
                         </p>
                         <p class="text-sm text-gray-400">
                             <i class="fas fa-user"></i> <strong>Pasajero:</strong> <?php echo htmlspecialchars($trip['passenger_name']); ?>
                         </p>
                         <p class="text-sm text-gray-400">
                             <i class="fas fa-money-bill-wave"></i> <strong>Tarifa:</strong> $<?php echo number_format($trip['fare'], 2); ?>
+                            <span class="text-xs text-gray-500 ml-1">(<?php echo htmlspecialchars($payLabelsHist[$trip['payment_method'] ?? 'efectivo'] ?? 'Efectivo'); ?>)</span>
+                            <?php if (($trip['payment_status'] ?? '') === 'pagado'): ?>
+                                <span class="text-xs bg-green-600/30 text-green-300 px-2 py-0.5 rounded-full ml-1">Pagado</span>
+                            <?php endif; ?>
                         </p>
+                        <?php if (!empty($trip['rating'])): ?>
+                        <p class="text-sm text-yellow-400">
+                            <strong>Calificacion:</strong> <?php echo str_repeat('⭐', (int)$trip['rating']); ?>
+                        </p>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             <?php else: ?>

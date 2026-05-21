@@ -7,18 +7,18 @@ $tripId = $_GET['trip_id'] ?? null;
 if ($tripId) {
     // Consulta para obtener los detalles del viaje
     $stmt = $conn->prepare("
-        SELECT 
-            t.status, 
-            t.pickup_address AS pickup, 
-            t.destination_address AS destination, 
-            t.distance, 
-            t.fare, 
-            u.name AS passenger_name, 
-            u.phone AS passenger_phone, -- Se incluye el teléfono del pasajero
-            d.name AS driver_name, 
-            d.lat AS driver_lat, 
-            d.lng AS driver_lng, 
-            d.plate AS driver_plate
+        SELECT
+            t.status,
+            t.pickup_address AS pickup,
+            t.destination_address AS destination,
+            t.distance,
+            t.fare,
+            u.name AS passenger_name,
+            u.phone AS passenger_phone,
+            u.photo AS passenger_photo,
+            d.name AS driver_name,
+            d.plate AS driver_plate,
+            d.photo AS driver_photo
         FROM trips t
         LEFT JOIN users u ON t.passenger_id = u.id
         LEFT JOIN users d ON t.driver_id = d.id
@@ -38,13 +38,12 @@ if ($tripId) {
             "distance" => $trip["distance"],
             "fare" => $trip["fare"],
             "passenger_name" => $trip["passenger_name"] ?? "Sin información",
-            "passenger_phone" => $trip["passenger_phone"] ?? "No disponible", // Campo agregado
+            "passenger_phone" => $trip["passenger_phone"] ?? "No disponible",
+            "passenger_photo" => $trip["passenger_photo"] ?? null,
             "driver_name" => $trip["driver_name"] ?? "No asignado",
             "driver_plate" => $trip["driver_plate"] ?? "No disponible",
-            "driver_location" => ($trip["driver_lat"] && $trip["driver_lng"]) ? [
-                "lat" => floatval($trip["driver_lat"]),
-                "lng" => floatval($trip["driver_lng"]),
-            ] : null
+            "driver_photo" => $trip["driver_photo"] ?? null,
+            "driver_location" => null
         ];
 
         // Configurar la respuesta

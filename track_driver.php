@@ -23,8 +23,10 @@ $stmt = $conn->prepare("
         trips.distance,
         trips.fare,
         trips.status,
+        trips.service_type,
         users.name AS passenger_name,
-        users.phone AS passenger_phone
+        users.phone AS passenger_phone,
+        users.photo AS passenger_photo
     FROM trips
     INNER JOIN users ON trips.passenger_id = users.id
     WHERE trips.id = ? AND trips.driver_id = ?
@@ -51,6 +53,7 @@ $mapsApiKey = GOOGLE_MAPS_API_KEY;
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Seguimiento del Conductor</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css">
+    <link rel="stylesheet" href="modal.css">
     <script src="https://maps.googleapis.com/maps/api/js?key=<?php echo htmlspecialchars($mapsApiKey); ?>&libraries=places"></script>
     <style>
         #map { width: 100%; height: 400px; border-radius: 8px; }
@@ -74,16 +77,38 @@ $mapsApiKey = GOOGLE_MAPS_API_KEY;
             <button id="voice-control" title="Activar/Desactivar Voz">&#128266;</button>
 
             <div class="bg-gray-800 p-6 rounded-xl shadow-md space-y-4">
-                <h2 class="text-lg font-bold text-blue-500">Detalles del Viaje</h2>
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-blue-500">Detalles del Viaje</h2>
+                    <?php
+                        $svcLabels = ['economico' => 'Economico', 'confort' => 'Confort'];
+                        $svcType = $trip['service_type'] ?? 'economico';
+                    ?>
+                    <span class="text-xs px-3 py-1 rounded-full font-bold <?php echo $svcType === 'confort' ? 'bg-purple-600/30 text-purple-300' : 'bg-blue-600/30 text-blue-300'; ?>">
+                        <?php echo htmlspecialchars($svcLabels[$svcType] ?? 'Economico'); ?>
+                    </span>
+                </div>
+
+                <!-- Info del pasajero con foto -->
+                <div class="flex items-center gap-3 p-3 bg-gray-900/50 rounded-lg">
+                    <?php if (!empty($trip['passenger_photo'])): ?>
+                        <img src="<?php echo htmlspecialchars($trip['passenger_photo']); ?>" alt="Pasajero" class="w-12 h-12 rounded-full border-2 border-blue-400 object-cover">
+                    <?php else: ?>
+                        <div class="w-12 h-12 rounded-full border-2 border-blue-400 bg-gray-700 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="#9ca3af"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a8 8 0 00-8 8h16a8 8 0 00-8-8z"/></svg>
+                        </div>
+                    <?php endif; ?>
+                    <div>
+                        <p class="text-sm font-bold text-white"><?php echo htmlspecialchars($trip['passenger_name']); ?></p>
+                        <a href="tel:<?php echo htmlspecialchars($trip['passenger_phone']); ?>" class="text-xs text-blue-400 hover:underline">
+                            <?php echo htmlspecialchars($trip['passenger_phone']); ?>
+                        </a>
+                    </div>
+                </div>
+
                 <p id="pickup" class="text-sm"><strong>Recoger en:</strong> <?php echo htmlspecialchars($trip['pickup']); ?></p>
                 <p id="destination" class="text-sm"><strong>Destino:</strong> <?php echo htmlspecialchars($trip['destination']); ?></p>
                 <p id="distance" class="text-sm"><strong>Distancia:</strong> <?php echo htmlspecialchars($trip['distance']); ?> km</p>
                 <p id="fare" class="text-sm"><strong>Tarifa:</strong> $<?php echo htmlspecialchars($trip['fare']); ?></p>
-                <p id="phone" class="text-sm"><strong>Telefono del pasajero:</strong>
-                    <a href="tel:<?php echo htmlspecialchars($trip['passenger_phone']); ?>" class="text-blue-500 hover:underline">
-                        <?php echo htmlspecialchars($trip['passenger_phone']); ?>
-                    </a>
-                </p>
 
                 <button id="action-button" class="w-full bg-green-500 text-white py-3 rounded-lg font-bold hover:bg-green-600 transition">
                     Estoy afuera
@@ -173,24 +198,53 @@ $mapsApiKey = GOOGLE_MAPS_API_KEY;
             actionButton.addEventListener("click", () => {
                 const tripId = <?php echo json_encode($tripId); ?>;
                 if (currentAction === "pickup") {
-                    currentAction = "destination";
-                    actionButton.textContent = "Pedido finalizado";
-                    fetch("update_trip_status.php", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ trip_id: tripId, status: "en_destino" }),
+                    RideIt.confirm({
+                        title: 'Llegaste al punto de recogida',
+                        message: '¿Confirmas que ya estas en el punto de recogida del pasajero?',
+                        type: 'info',
+                        confirmText: 'Si, estoy aqui',
+                        confirmClass: 'btn-success',
+                        onConfirm: () => {
+                            currentAction = "destination";
+                            actionButton.textContent = "Pedido finalizado";
+                            actionButton.classList.remove("bg-green-500", "hover:bg-green-600");
+                            actionButton.classList.add("bg-blue-500", "hover:bg-blue-600");
+                            fetch("update_trip_status.php", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ trip_id: tripId, status: "en_destino" }),
+                            });
+                            RideIt.toast('Estado actualizado. Navegando al destino.', 'success');
+                        }
                     });
                 } else {
-                    fetch("update_trip_status.php", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ trip_id: tripId, status: "completado" }),
-                    }).then(() => { window.location.href = "dashboard.php"; });
+                    RideIt.confirm({
+                        title: 'Finalizar viaje',
+                        message: '¿Confirmas que el pasajero ha llegado a su destino y el viaje ha terminado?',
+                        type: 'success',
+                        confirmText: 'Finalizar viaje',
+                        confirmClass: 'btn-success',
+                        onConfirm: () => {
+                            fetch("update_trip_status.php", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ trip_id: tripId, status: "completado" }),
+                            }).then(() => {
+                                RideIt.alert({
+                                    title: 'Viaje completado',
+                                    message: 'El viaje se ha registrado como completado exitosamente.',
+                                    type: 'success',
+                                    onClose: () => window.location.href = "dashboard.php"
+                                });
+                            });
+                        }
+                    });
                 }
             });
         }
 
         window.onload = initMap;
     </script>
+    <script src="modal.js"></script>
 </body>
 </html>

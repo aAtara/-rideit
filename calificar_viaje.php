@@ -51,8 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && is_null($trip['rating'])) {
         if ($rating < 1 || $rating > 5) {
             $error = "Selecciona una calificacion valida (1-5 estrellas).";
         } else {
-            $stmt = $conn->prepare("UPDATE trips SET rating = ? WHERE id = ? AND passenger_id = ?");
-            $stmt->bind_param("iii", $rating, $tripId, $userId);
+            $stmt = $conn->prepare("UPDATE trips SET rating = ?, comment = ? WHERE id = ? AND passenger_id = ?");
+            $stmt->bind_param("isii", $rating, $comment, $tripId, $userId);
             if ($stmt->execute()) {
                 $mensaje = "Gracias por tu calificacion.";
                 $trip['rating'] = $rating;
@@ -70,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && is_null($trip['rating'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calificar Viaje - RideIt</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@latest/dist/tailwind.min.css">
+    <link rel="stylesheet" href="modal.css">
     <style>
         body { background: linear-gradient(135deg, #01579B 0%, #003366 100%); }
         .glass { background: rgba(23, 37, 84, 0.72); backdrop-filter: blur(5px); border-radius: 1.25rem; border: 1px solid rgba(255, 255, 255, 0.10); }
@@ -117,13 +118,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && is_null($trip['rating'])) {
                     <textarea name="comment" id="comment" rows="3" placeholder="Escribe un comentario sobre tu experiencia..." class="w-full px-4 py-3"></textarea>
                 </div>
 
-                <button type="submit" class="w-full bg-gradient-to-r from-yellow-500 to-yellow-400 text-yellow-900 py-3 rounded-xl font-bold shadow-xl hover:scale-105 transition text-lg">
+                <button type="button" onclick="confirmRating()" class="w-full bg-gradient-to-r from-yellow-500 to-yellow-400 text-yellow-900 py-3 rounded-xl font-bold shadow-xl hover:scale-105 transition text-lg">
                     Enviar calificacion
                 </button>
             </form>
         <?php endif; ?>
     </div>
 
+    <script src="modal.js"></script>
     <script>
         const labels = ['', 'Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente'];
         function setRating(value) {
@@ -131,6 +133,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && is_null($trip['rating'])) {
             document.getElementById('rating-text').textContent = labels[value];
             document.querySelectorAll('.star').forEach(s => {
                 s.classList.toggle('active', parseInt(s.dataset.value) <= value);
+            });
+        }
+
+        function confirmRating() {
+            const rating = parseInt(document.getElementById('rating-input').value);
+            if (rating < 1 || rating > 5) {
+                RideIt.alert({ title: 'Selecciona una calificacion', message: 'Debes seleccionar de 1 a 5 estrellas antes de enviar.', type: 'warning' });
+                return;
+            }
+            const stars = '★'.repeat(rating) + '☆'.repeat(5 - rating);
+            RideIt.confirm({
+                title: 'Enviar calificacion',
+                message: '<div style="font-size:1.5rem;color:#fbbf24;letter-spacing:4px;">' + stars + '</div><br>' + labels[rating] + '<br><br>¿Deseas enviar esta calificacion?',
+                type: 'info',
+                confirmText: 'Enviar',
+                confirmClass: 'btn-success',
+                onConfirm: () => document.querySelector('form').submit()
             });
         }
     </script>
